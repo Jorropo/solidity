@@ -368,14 +368,21 @@ bool TypeChecker::visit(FunctionDefinition const& _function)
 		}
 		if (
 			_function.isPublic() &&
-			!_function.sourceUnit().annotation().experimentalFeatures.count(ExperimentalFeature::ABIEncoderV2) &&
 			!typeSupportedByOldABIEncoder(*type(var), isLibraryFunction)
-		)
-			m_errorReporter.typeError(
-				var.location(),
-				"This type is only supported in the new experimental ABI encoder. "
-				"Use \"pragma experimental ABIEncoderV2;\" to enable the feature."
-			);
+		) {
+			if (_function.sourceUnit().annotation().experimentalFeatures.count(ExperimentalFeature::ABIEncoderV2)){
+				m_errorReporter.typeError(
+					var.location(),
+					"This type isn't supported yet."
+				);
+			} else {
+				m_errorReporter.typeError(
+					var.location(),
+					"This type is only supported in the new experimental ABI encoder. "
+					"Use \"pragma experimental ABIEncoderV2;\" to enable the feature."
+				);
+			}
+		}
 	};
 	for (ASTPointer<VariableDeclaration> const& var: _function.parameters())
 	{
@@ -586,15 +593,20 @@ bool TypeChecker::visit(EventDefinition const& _eventDef)
 			m_errorReporter.typeError(var->location(), "Type is required to live outside storage.");
 		if (!type(*var)->interfaceType(false))
 			m_errorReporter.typeError(var->location(), "Internal or recursive type is not allowed as event parameter type.");
-		if (
-			!_eventDef.sourceUnit().annotation().experimentalFeatures.count(ExperimentalFeature::ABIEncoderV2) &&
-			!typeSupportedByOldABIEncoder(*type(*var), false /* isLibrary */)
-		)
-			m_errorReporter.typeError(
-				var->location(),
-				"This type is only supported in the new experimental ABI encoder. "
-				"Use \"pragma experimental ABIEncoderV2;\" to enable the feature."
-			);
+		if (!typeSupportedByOldABIEncoder(*type(*var), false /* isLibrary */)) {
+			if (_eventDef.sourceUnit().annotation().experimentalFeatures.count(ExperimentalFeature::ABIEncoderV2)){
+				m_errorReporter.typeError(
+					var->location(),
+					"This type isn't supported yet."
+				);
+			} else {
+				m_errorReporter.typeError(
+					var->location(),
+					"This type is only supported in the new experimental ABI encoder. "
+					"Use \"pragma experimental ABIEncoderV2;\" to enable the feature."
+				);
+			}
+		}
 	}
 	if (_eventDef.isAnonymous() && numIndexed > 4)
 		m_errorReporter.typeError(_eventDef.location(), "More than 4 indexed arguments for anonymous event.");
